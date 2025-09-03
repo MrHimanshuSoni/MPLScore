@@ -204,6 +204,7 @@
 
 	function log(text) {
 	  comm.innerHTML = text + "<br>" + comm.innerHTML;
+  	  comm.scrollTop = 0;  // always stick to the top
 	}
 
 
