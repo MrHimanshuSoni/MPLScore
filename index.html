@@ -488,9 +488,10 @@
 
     // Bowler change: apply pending swap once & start .1
     bowlerSelect.addEventListener('change', () => {
-      if (balls === 0) { // && pendingOverSwapMode) {
-        switchStrike();
-         // first ball of new over // balls = 1;
+      if (balls === 0) {
+		if (overs > 0 && !lastBatsman) {
+       		switchStrike();
+		}
         log(`Start of over ${overs} ➝ New Bowler: ${bowlerSelect.value}, Batsman on Strike: ${strikerSelect.value}`);
         pendingOverSwapMode = null;
       }
