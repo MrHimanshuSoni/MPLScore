@@ -202,10 +202,10 @@
       document.getElementById("scoreBox").innerText = display;
     }
 
-    function log(text) {
-      comm.innerHTML += text + "<br>";
-      comm.scrollTop = comm.scrollHeight;
-    }
+	function log(text) {
+	  comm.innerHTML = text + "<br>" + comm.innerHTML;
+	}
+
 
     function switchStrike() {
       const s = document.getElementById("striker"), n = document.getElementById("nonstriker");
