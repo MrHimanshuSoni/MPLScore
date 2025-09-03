@@ -445,10 +445,16 @@
       saveState();
     }
 
-    function toggleLastBatsman(isOn) {
-      lastBatsman = !!isOn;
-      saveState();
-    }
+	function toggleLastBatsman(isOn) {
+	  lastBatsman = !!isOn;
+	  if (lastBatsman) {
+	    log(`⚠️ Striker ${strikerSelect.value} marked as Solo/Last Batsman`);
+	  } else {
+	    log(`ℹ️ Last Batsman mode turned OFF`);
+	  }
+	  saveState();
+	}
+
 
 	function resetMatch() {
 	  if (!confirm("⚠️ Are you sure you want to start a new match? All current scores and commentary will be lost.")) {
