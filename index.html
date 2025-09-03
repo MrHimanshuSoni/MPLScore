@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MPL Scoring by HS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 10px; background: #f9f9f9; }
+    h2, h3 { text-align: center; }
+    select, button, label { padding: 10px; font-size: 16px; margin: 5px; border-radius: 8px; border: 1px solid #ccc; }
+    #scoreBox { font-size: 24px; font-weight: bold; background: #fff; border: 2px solid #333; padding: 15px; margin: 20px auto; text-align: center; max-width: 420px; border-radius: 12px; }
+    .flex { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+    .highlight { background: #007bff; color: white; }
+    .btn-small { width: 60px; margin: 4px; border-radius: 8px; }
+    .section { background: #fff; border: 1px solid #ccc; border-radius: 12px; padding: 10px; margin: 10px auto; max-width: 700px; }
+    .section-title { font-weight: bold; margin-bottom: 8px; text-align: center; }
+    .commentary, .scorecards { margin: 10px auto; width: 95%; max-width: 700px; }
+    .commentary-box, .card { background: #fff; border: 1px solid #ccc; padding: 10px; overflow-y: auto; max-height: 220px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    .runout-options { display: none; margin: 10px auto; text-align: center; }
+    .action-btn { font-weight: bold; font-size: 18px; background: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 10px; margin: 8px auto; display: block; }
+    .toolbar { gap: 6px; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; }
+      #scoreBox { border-color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <h2>MPL Scoring by HS</h2>
+
+  <div class="flex">
+    <select id="striker">
+      <option disabled selected value="">Striker</option>
+    </select>
+
+    <select id="nonstriker">
+      <option disabled selected value="">Non-Striker</option>
+    </select>
+
+    <select id="bowler">
+      <option disabled selected value="">Bowler</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Runs by Running</div>
+    <div class="flex" id="runBtns">
+      <button class="btn-small" onclick="selectRun(0, this)">0</button>
+      <button class="btn-small" onclick="selectRun(1, this)">1</button>
+      <button class="btn-small" onclick="selectRun(2, this)">2</button>
+      <button class="btn-small" onclick="selectRun(3, this)">3</button>
+      <button class="btn-small" onclick="selectRun(4, this)">4</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Zone Bonus</div>
+    <div class="flex" id="zoneBtns">
+      <button class="btn-small" onclick="selectZone(0, this)">0</button>
+      <button class="btn-small" onclick="selectZone(1, this)">1</button>
+      <button class="btn-small" onclick="selectZone(2, this)">2</button>
+      <button class="btn-small" onclick="selectZone(3, this)">3</button>
+      <button class="btn-small" onclick="selectZone(4, this)">4</button>
+      <button class="btn-small" onclick="selectZone(6, this)">6</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Wickets</div>
+    <div class="flex">
+      <button class="no-print" onclick="runOutPrompt()">Run Out</button>
+      <button class="no-print" onclick="recordWicket('bowled')">Bowled</button>
+      <button class="no-print" onclick="recordWicket('caught')">Caught</button>
+      <button class="no-print" onclick="recordWicket('stumped')">Stumped</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Extras & Actions</div>
+    <div class="flex toolbar">
+      <button class="no-print" onclick="addExtra('wide')">WIDE</button>
+      <button class="no-print" onclick="addExtra('noball')">NO BALL</button>
+
+      <button id="scoreBtn" class="action-btn no-print" onclick="scoreBall()" disabled>✅ SCORE</button>
+
+      <!--<button class="no-print" onclick="switchStrike()">🔁 Change Pair</button>-->
+      <button class="no-print" onclick="changeInnings()">🛑 Change Innings</button>
+      <button class="no-print" onclick="undoLastBall()">↩️ Undo Last Ball</button>
+      <button class="no-print" onclick="manualSwap()">🔄 Swap Batsmen</button>
+
+      <label class="no-print" style="display:flex;align-items:center;gap:6px;border:none;">
+        <input type="checkbox" id="lastBatsmanToggle" onchange="toggleLastBatsman(this.checked)"> Last Batsman (solo)
+      </label>
+
+      <button class="no-print" onclick="printSummary()">🧾 Summary PDF</button>
+    </div>
+  </div>
+
+  <div id="scoreBox">Total: 0 (0.0 overs)</div>
+
+  <div class="runout-options" id="runoutBox">
+    <p>Who got out?</p>
+    <button onclick="confirmRunOut('striker')">Striker</button>
+    <button onclick="confirmRunOut('nonstriker')">Non-Striker</button>
+  </div>
+
+  <div class="commentary">
+    <h3>Commentary</h3>
+    <div class="commentary-box" id="commentary"></div>
+  </div>
+
+  <div class="scorecards">
+    <h3>Batting Scorecard</h3>
+    <div class="card">
+      <table id="battingTable">
+        <thead><tr><th>Player</th><th>Runs</th><th>Out</th><th>Eff Runs</th><th>Avg</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3>Bowling Scorecard</h3>
+    <div class="card">
+      <table id="bowlingTable">
+        <thead><tr><th>Bowler</th><th>Balls</th><th>Runs</th><th>Wickets</th><th>Eff Runs</th><th>Economy</th><th>Avg</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const playerNames = [
+      "🐅Himanshu","🐅Hardik Doshi","🐅Hardik Kanabar","🐅Purish","🐅Ravi Saraf","🐅Jeet Solanki","🐅Neel",
+      "🐍Shashin","🐍Bharat","🐍Nishanth","🐍Sanket","🐍Pushpak","🐍Bankil","🐍Nitesh",
+      "🦩Zalak","🦩Chetan","🦩Sid","🦩Ankit","🦩Keyur","🦩Jolin","🦩Brijesh"
+    ];
+
+    const strikerSelect = document.getElementById("striker");
+    const nonStrikerSelect = document.getElementById("nonstriker");
+    const bowlerSelect = document.getElementById("bowler");
+    const comm = document.getElementById("commentary");
+    const lastBatsmanCheckbox = document.getElementById("lastBatsmanToggle");
+
+    playerNames.forEach(name => {
+      strikerSelect.innerHTML += `<option>${name}</option>`;
+      nonStrikerSelect.innerHTML += `<option>${name}</option>`;
+      bowlerSelect.innerHTML += `<option>${name}</option>`;
+    });
+
+    let totalScore = 0, balls = 0, overs = 0, innings = 1, firstInningsScore = null;
+    let runSelected = 0, zoneSelected = 0;
+    let runPicked = false, zonePicked = false;
+    const players = {}, bowlers = {};
+
+    // history + flags
+    let history = [];
+    let pendingOverSwapMode = null; // "swap" | "keep" | null
+    let lastBatsman = false;
+
+    function initPlayer(name) { if (!players[name]) players[name] = { runs: 0, outs: 0 }; }
+    function initBowler(name) { if (!bowlers[name]) bowlers[name] = { balls: 0, runs: 0, wickets: 0 }; }
+
+    function updateScore() {
+      let display = `Total: ${totalScore} (${overs}.${balls} overs)`;
+      if (innings === 2 && firstInningsScore !== null) display += ` | Target: ${firstInningsScore + 1}`;
+      document.getElementById("scoreBox").innerText = display;
+    }
+
+    function log(text) {
+      comm.innerHTML += text + "<br>";
+      comm.scrollTop = comm.scrollHeight;
+    }
+
+    function switchStrike() {
+      const s = document.getElementById("striker"), n = document.getElementById("nonstriker");
+      [s.value, n.value] = [n.value, s.value];
+      saveState();
+    }
+
+    function selectRun(val, btn) {
+      runSelected = val; runPicked = true;
+      document.querySelectorAll("#runBtns button").forEach(b => b.classList.remove("highlight"));
+      btn.classList.add("highlight");
+      updateScoreBtnState();
+    }
+    function selectZone(val, btn) {
+      zoneSelected = val; zonePicked = true;
+      document.querySelectorAll("#zoneBtns button").forEach(b => b.classList.remove("highlight"));
+      btn.classList.add("highlight");
+      updateScoreBtnState();
+    }
+    function updateScoreBtnState() {
+      document.getElementById("scoreBtn").disabled = !(runPicked && zonePicked);
+    }
+    function clearSelection() {
+      runSelected = 0; zoneSelected = 0; runPicked = false; zonePicked = false;
+      document.querySelectorAll("#runBtns button, #zoneBtns button").forEach(b => b.classList.remove("highlight"));
+      updateScoreBtnState();
+    }
+
+    // snapshot for undo
+    function snapBefore() {
+      return {
+        strikerBefore: strikerSelect.value,
+        nonStrikerBefore: nonStrikerSelect.value,
+        bowlerBefore: bowlerSelect.value,
+        ballsBefore: balls,
+        oversBefore: overs,
+        pendingOverSwapModeBefore: pendingOverSwapMode
+      };
+    }
+
+    // SCORING
+    function scoreBall() {
+      const striker = strikerSelect.value;
+      const bowler = bowlerSelect.value;
+      if (!striker || !bowler) return alert("Select striker and bowler");
+      initPlayer(striker); initBowler(bowler);
+
+      const prev = snapBefore();
+
+      const zone = runSelected > 0 ? zoneSelected : 0;
+      const total = runSelected + zone;
+
+      totalScore += total;
+      players[striker].runs += total;
+      bowlers[bowler].balls++;
+      bowlers[bowler].runs += total;
+
+      balls++;
+      // capture display BEFORE mutating over/ball for end-of-over
+      const dispOver = overs, dispBall = balls;
+
+      log(`${dispOver}.${dispBall} ➝ ${striker} ran ${runSelected}, zone bonus ${zone} → Total ${totalScore}`);
+
+	  // If not end of over, swap immediately for odd runs
+	  if (balls < 6 && !lastBatsman && (runSelected % 2 === 1)) {
+		  switchStrike();
+	  }
+
+	  if (balls === 6) {
+		  overs++;
+		  balls = 0;
+		  if (!lastBatsman) {
+			// At over end, decide swap mode based on last run parity
+			pendingOverSwapMode = (runSelected % 2 === 1) ? "swap" : "keep";
+		  }
+		  alert("Over complete. Select new bowler.");
+		  bowlerSelect.value = "";
+	  }
+
+      history.push({ type: 'score', run: runSelected, zone, totalAdded: total, striker, bowler, ...prev });
+
+      updateScore(); updateTables(); clearSelection(); saveState();
+    }
+
+    function addExtra(type) {
+      const bowler = bowlerSelect.value;
+      if (!bowler) return alert("Select bowler first");
+      initBowler(bowler);
+
+      totalScore += 1;
+      bowlers[bowler].runs += 1;
+
+      log(`${overs}.${balls} ➝ ${type.toUpperCase()} +1. Total ${totalScore}`);
+
+      history.push({ type: 'extra', subType: type, bowler });
+
+      updateScore(); updateTables(); saveState();
+    }
+
+    function runOutPrompt() {
+      if (!strikerSelect.value || !nonStrikerSelect.value) return alert("Select both batters.");
+      document.getElementById("runoutBox").style.display = "block";
+    }
+
+    function confirmRunOut(outType) {
+      recordWicket("run out", outType);
+      document.getElementById("runoutBox").style.display = "none";
+    }
+
+    // WICKET
+	function recordWicket(type, outType = 'striker') {
+	  const striker = strikerSelect.value;
+	  const nonStriker = nonStrikerSelect.value;
+	  const bowler = bowlerSelect.value;
+
+	  const prev = snapBefore();
+
+	  const outPlayer = outType === 'striker' ? striker : nonStriker;
+	  if (!outPlayer || !bowler) return alert("Select players");
+	  initPlayer(outPlayer); initBowler(bowler);
+
+	  totalScore -= 2;
+	  players[outPlayer].outs++;
+	  bowlers[bowler].balls++;
+	  bowlers[bowler].wickets++;
+	  balls++;
+
+	  const dispOver = overs, dispBall = balls;
+	  log(`${dispOver}.${dispBall} ➝ ${type.toUpperCase()}: ${outPlayer} out (-2). Total = ${totalScore}`);
+
+	  // Default: striker remains
+	  let newStriker = striker;
+
+	  if (type === 'run out') {
+		if (outType === 'striker') newStriker = nonStriker;
+		else newStriker = striker;
+	  }
+
+	  // Apply over-end rules
+	  if (balls === 6) {
+		overs++;
+		balls = 0;
+		if (!lastBatsman) {
+		  // Over swap always applies (even if dismissal)
+		  pendingOverSwapMode = "swap";
+		}
+		alert("Over complete. Select new bowler.");
+		bowlerSelect.value = "";
+	  }
+
+	  strikerSelect.value = newStriker;
+
+	  log(`Now striker: ${strikerSelect.value}`);
+
+	  history.push({ type: 'wicket', wicketType: type, outType, outPlayer, bowler, ...prev });
+
+	  updateScore(); updateTables(); saveState();
+	}
+
+
+    // TABLES
+    function updateTables() {
+      const bTable = document.getElementById("battingTable").getElementsByTagName("tbody")[0];
+      const bwTable = document.getElementById("bowlingTable").getElementsByTagName("tbody")[0];
+      bTable.innerHTML = bwTable.innerHTML = "";
+
+      for (let p in players) {
+        const runs = players[p].runs;
+        const outs = players[p].outs;
+        const effRuns = runs - (outs * 2);
+        const avg = outs > 0 ? (effRuns / outs).toFixed(2) : "∞";
+        let row = bTable.insertRow();
+        row.innerHTML = `<td>${p}</td><td>${runs}</td><td>${outs}</td><td>${effRuns}</td><td>${avg}</td>`;
+      }
+
+      for (let b in bowlers) {
+        const bballs = bowlers[b].balls;
+        const runs = bowlers[b].runs;
+        const wickets = bowlers[b].wickets;
+        const effRuns = runs - (wickets * 2);
+        const oversBowled = bballs / 6;
+        const econ = oversBowled > 0 ? (effRuns / oversBowled).toFixed(2) : "-";
+        const avg = wickets > 0 ? (effRuns / wickets).toFixed(2) : "∞";
+        let row = bwTable.insertRow();
+        row.innerHTML = `<td>${b}</td><td>${bballs}</td><td>${runs}</td><td>${wickets}</td><td>${effRuns}</td><td>${econ}</td><td>${avg}</td>`;
+      }
+    }
+
+    function changeInnings() {
+      if (innings === 1) {
+        innings = 2;
+        firstInningsScore = totalScore;
+        log(`End of 1st innings. Total: ${firstInningsScore}`);
+        totalScore = 0; balls = 0; overs = 0;
+        pendingOverSwapMode = null;
+        updateScore(); saveState();
+      } else {
+        log("2nd innings already in progress."); saveState();
+      }
+    }
+
+    // UNDO
+    function undoLastBall() {
+      const last = history.pop();
+      if (!last) { alert("Nothing to undo."); return; }
+
+      if (last.type === 'score') {
+        totalScore -= last.totalAdded;
+        initPlayer(last.striker); initBowler(last.bowler);
+        players[last.striker].runs = Math.max(0, players[last.striker].runs - last.totalAdded);
+        bowlers[last.bowler].runs = Math.max(0, bowlers[last.bowler].runs - last.totalAdded);
+        bowlers[last.bowler].balls = Math.max(0, bowlers[last.bowler].balls - 1);
+        balls = last.ballsBefore;
+        overs = last.oversBefore;
+        pendingOverSwapMode = last.pendingOverSwapModeBefore;
+        strikerSelect.value = last.strikerBefore;
+        nonStrikerSelect.value = last.nonStrikerBefore;
+        bowlerSelect.value = last.bowlerBefore;
+        log(`${overs}.${balls} ➝ UNDO: Removed ${last.run}+${last.zone} for ${last.striker}. Total = ${totalScore}`);
+      } else if (last.type === 'extra') {
+        totalScore = Math.max(0, totalScore - 1);
+        if (last.bowler) {
+          initBowler(last.bowler);
+          bowlers[last.bowler].runs = Math.max(0, bowlers[last.bowler].runs - 1);
+        }
+        log(`${overs}.${balls} ➝ UNDO: Removed ${last.subType.toUpperCase()} extra. Total = ${totalScore}`);
+      } else if (last.type === 'wicket') {
+        totalScore += 2;
+        initPlayer(last.outPlayer); initBowler(last.bowler);
+        players[last.outPlayer].outs = Math.max(0, (players[last.outPlayer].outs || 0) - 1);
+        bowlers[last.bowler].wickets = Math.max(0, (bowlers[last.bowler].wickets || 0) - 1);
+        bowlers[last.bowler].balls = Math.max(0, (bowlers[last.bowler].balls || 0) - 1);
+        balls = last.ballsBefore;
+        overs = last.oversBefore;
+        pendingOverSwapMode = last.pendingOverSwapModeBefore;
+        strikerSelect.value = last.strikerBefore;
+        nonStrikerSelect.value = last.nonStrikerBefore;
+        bowlerSelect.value = last.bowlerBefore;
+        log(`${overs}.${balls} ➝ UNDO: Reverted ${last.wicketType.toUpperCase()} dismissal of ${last.outPlayer}. Total = ${totalScore}`);
+      }
+
+      updateScore();
+      updateTables();
+      saveState();
+    }
+
+    function toggleLastBatsman(isOn) {
+      lastBatsman = !!isOn;
+      saveState();
+    }
+
+    // Bowler change: apply pending swap once & start .1
+    bowlerSelect.addEventListener('change', () => {
+      if (balls === 0 && pendingOverSwapMode) {
+        if (pendingOverSwapMode === "swap") {
+          switchStrike();
+        }
+        balls = 1; // first ball of new over
+        log(`Start of over ${overs}.1 ➝ New Bowler: ${bowlerSelect.value}, Batsman on Strike: ${strikerSelect.value}`);
+        pendingOverSwapMode = null;
+      }
+      saveState();
+    });
+
+    function printSummary() { window.print(); }
+
+    function saveState() {
+      const state = {
+        totalScore, balls, overs, innings, firstInningsScore,
+        players, bowlers,
+        striker: strikerSelect.value,
+        nonStriker: nonStrikerSelect.value,
+        bowler: bowlerSelect.value,
+        commentaryHTML: comm.innerHTML,
+        history,
+        pendingOverSwapMode,
+        lastBatsman
+      };
+      localStorage.setItem("mplMatchState", JSON.stringify(state));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem("mplMatchState");
+      if (!saved) return;
+      const s = JSON.parse(saved);
+
+      totalScore = Number(s.totalScore) || 0;
+      balls = Number(s.balls) || 0;
+      overs = Number(s.overs) || 0;
+      innings = Number(s.innings) || 1;
+      firstInningsScore = (s.firstInningsScore === null || s.firstInningsScore === undefined) ? null : Number(s.firstInningsScore);
+
+      Object.keys(players).forEach(k => delete players[k]);
+      Object.assign(players, s.players || {});
+      Object.keys(bowlers).forEach(k => delete bowlers[k]);
+      Object.assign(bowlers, s.bowlers || {});
+
+      strikerSelect.value = s.striker || "";
+      nonStrikerSelect.value = s.nonStriker || "";
+      bowlerSelect.value = s.bowler || "";
+
+      comm.innerHTML = s.commentaryHTML || "";
+      history = Array.isArray(s.history) ? s.history : [];
+      pendingOverSwapMode = s.pendingOverSwapMode || null;
+      lastBatsman = !!s.lastBatsman;
+      lastBatsmanCheckbox.checked = lastBatsman;
+
+      updateScore();
+      updateTables();
+      updateScoreBtnState();
+    }
+
+    function manualSwap() {
+      switchStrike();
+      log(`Umpire swapped batsmen manually…`);
+      saveState();
+    }
+
+    strikerSelect.addEventListener('change', saveState);
+    nonStrikerSelect.addEventListener('change', saveState);
+
+    loadState();
+  </script>
+</body>
+</html>
