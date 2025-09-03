@@ -54,6 +54,13 @@
       .no-print { display: none !important; }
       body { background: #fff; }
       #scoreBox { border-color: #000; background: #fff; color: #000; }
+	  
+		/* NEW: expand commentary + tables fully in print */
+	  .commentary-box,
+	  .card {
+	    max-height: none !important;
+	    overflow-y: visible !important;
+      }
     }
 
   </style>
