@@ -270,17 +270,13 @@
       log(`${dispOver}.${dispBall} ➝ ${striker} ran ${runSelected}, zone bonus ${zone} → Total ${totalScore}`);
 
 	  // If not end of over, swap immediately for odd runs
-	  if (balls < 6 && !lastBatsman && (runSelected % 2 === 1)) {
+	  if (!lastBatsman && (runSelected % 2 === 1)) {
 		  switchStrike();
 	  }
 
 	  if (balls === 6) {
 		  overs++;
 		  balls = 0;
-		  if (!lastBatsman) {
-			// At over end, decide swap mode based on last run parity
-			pendingOverSwapMode = (runSelected % 2 === 1) ? "swap" : "keep";
-		  }
 		  alert("Over complete. Select new bowler.");
 		  bowlerSelect.value = "";
 	  }
@@ -348,10 +344,6 @@
 	  if (balls === 6) {
 		overs++;
 		balls = 0;
-		if (!lastBatsman) {
-		  // Over swap always applies (even if dismissal)
-		  pendingOverSwapMode = "swap";
-		}
 		alert("Over complete. Select new bowler.");
 		bowlerSelect.value = "";
 	  }
@@ -496,10 +488,8 @@
 
     // Bowler change: apply pending swap once & start .1
     bowlerSelect.addEventListener('change', () => {
-      if (balls === 0 && pendingOverSwapMode) {
-        if (pendingOverSwapMode === "swap") {
-          switchStrike();
-        }
+      if (balls === 0) { // && pendingOverSwapMode) {
+        switchStrike();
         balls = 1; // first ball of new over
         log(`Start of over ${overs}.1 ➝ New Bowler: ${bowlerSelect.value}, Batsman on Strike: ${strikerSelect.value}`);
         pendingOverSwapMode = null;
