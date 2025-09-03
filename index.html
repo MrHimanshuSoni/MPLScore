@@ -499,8 +499,28 @@
       saveState();
     });
 
-    function printSummary() { window.print(); }
+    //function printSummary() { window.print(); }
+	function printSummary() {
+	  // Grab the commentary box
+	  const commBox = document.querySelector('.commentary-box');
+	  
+	  // Remember the old styles
+	  const oldMaxHeight = commBox.style.maxHeight;
+	  const oldOverflow = commBox.style.overflowY;
+	  
+	  // Expand so all commentary shows
+	  commBox.style.maxHeight = 'none';
+	  commBox.style.overflowY = 'visible';
+	  
+	  // Trigger print
+	  window.print();
+	  
+	  // Restore styles after print
+	  commBox.style.maxHeight = oldMaxHeight;
+	  commBox.style.overflowY = oldOverflow;
+	}
 
+	  
     function saveState() {
       const state = {
         totalScore, balls, overs, innings, firstInningsScore,
