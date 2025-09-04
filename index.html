@@ -581,9 +581,12 @@
     }
 
     function manualSwap() {
-      switchStrike();
-      log(`UMPIRE swapped the Batsmen manually! Batsman on Strike: ${strikerSelect.value}`);
-      saveState();
+    	if(!lastBatsman) {
+		  switchStrike();
+    	  log(`UMPIRE swapped the Batsmen manually! Batsman on Strike: ${strikerSelect.value}`);
+     	  saveState();
+		}
+		else {log(`Swap not allowed for Last/Solo Batsman`);}
     }
 
     strikerSelect.addEventListener('change', saveState);
