@@ -147,6 +147,25 @@
     <button onclick="confirmRunOut('striker')">Striker</button>
     <button onclick="confirmRunOut('nonstriker')">Non-Striker</button>
   </div>
+	
+	<!-- Run-out popup -->
+	<div id="runoutModal" style="
+	  display:none;
+	  position:fixed;
+	  top:0;left:0;width:100%;height:100%;
+	  background:rgba(0,0,0,0.5);
+	  align-items:center;justify-content:center;
+	  z-index:1000;
+	">
+	  <div style="background:#fff;padding:20px;border-radius:12px;text-align:center;max-width:300px;">
+	    <h3>Run Out – Who was out?</h3>
+	    <button onclick="confirmRunOut('striker')">Striker</button>
+	    <button onclick="confirmRunOut('nonstriker')">Non-Striker</button>
+	    <div style="margin-top:10px;">
+	      <button onclick="closeRunOut()">Cancel</button>
+	    </div>
+	  </div>
+	</div>
 
   <div class="commentary">
     <h3>Commentary</h3>
@@ -309,15 +328,22 @@
       updateScore(); updateTables(); saveState();
     }
 
-    function runOutPrompt() {
-      if (!strikerSelect.value || !nonStrikerSelect.value) return alert("Select both batters.");
-      document.getElementById("runoutBox").style.display = "block";
-    }
-
-    function confirmRunOut(outType) {
-      recordWicket("run out", outType);
-      document.getElementById("runoutBox").style.display = "none";
-    }
+	function runOutPrompt() {
+	  if (!strikerSelect.value || !nonStrikerSelect.value) {
+	    alert("Select both batters.");
+	    return;
+	  }
+	  document.getElementById("runoutModal").style.display = "flex";
+	}
+	
+	function confirmRunOut(outType) {
+	  recordWicket("run out", outType);
+	  closeRunOut();
+	}
+	
+	function closeRunOut() {
+	  document.getElementById("runoutModal").style.display = "none";
+	}
 
     // WICKET
 	function recordWicket(type, outType = 'striker') {
@@ -417,6 +443,7 @@
         log(`End of 1st innings. Total: ${firstInningsScore}`);
         totalScore = 0; balls = 0; overs = 0;
         pendingOverSwapMode = null;
+		clearLastBatsman();   // auto uncheck
         updateScore(); saveState();
       } else {
         log("2nd innings already in progress."); saveState();
@@ -482,6 +509,8 @@
 	function resetMatch() {
 	  if (!confirm("⚠️ Are you sure you want to start a new match? All current scores and commentary will be lost.")) {
 	    return; // user cancelled
+		  clearLastBatsman();   // auto uncheck
+		  log("🔄 New match started. Please select batsmen and bowler.")
 	  }
 	
 	  // Clear variables
@@ -514,12 +543,18 @@
 	
 	  log("🔄 New match started. Please select batsmen and bowler.");
 	}
+	function clearLastBatsman() {
+	  lastBatsman = false;
+	  lastBatsmanCheckbox.checked = false;
+	  log("⚠️ Last/Solo Batsman is AUTO-Disabled.");
+	}
 
 
     // Bowler change: apply pending swap once & start .1
     bowlerSelect.addEventListener('change', () => {
       if (balls === 0) {
 		if (overs > 0 && !lastBatsman) {
+			clearLastBatsman();   // auto uncheck
        		switchStrike();
 		}
         log(`Start of over ${overs} ➝ New Bowler: ${bowlerSelect.value}, Batsman on Strike: ${strikerSelect.value}`);
