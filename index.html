@@ -324,44 +324,60 @@
 	  const striker = strikerSelect.value;
 	  const nonStriker = nonStrikerSelect.value;
 	  const bowler = bowlerSelect.value;
-
+	
 	  const prev = snapBefore();
-
+	
 	  const outPlayer = outType === 'striker' ? striker : nonStriker;
 	  if (!outPlayer || !bowler) return alert("Select players");
 	  initPlayer(outPlayer); initBowler(bowler);
-
+	
+	  // scoring effect for a wicket
 	  totalScore -= 2;
 	  players[outPlayer].outs++;
 	  bowlers[bowler].balls++;
 	  bowlers[bowler].wickets++;
 	  balls++;
-
+	
 	  const dispOver = overs, dispBall = balls;
 	  log(`${dispOver}.${dispBall} ➝ ${type.toUpperCase()}: ${outPlayer} out (-2). Total = ${totalScore}`);
-
-	  // Default: striker remains
-	  let newStriker = striker;
-
-	  if (type === 'run out') {
-		if (outType === 'striker') newStriker = nonStriker;
-		else newStriker = striker;
+	
+	  // Decide who is on strike next
+	  let nextStriker = striker;
+	  let nextNonStriker = nonStriker;
+	
+	  if (!lastBatsman) {
+	    if (type === 'run out') {
+	      if (outType === 'striker') {
+	        // striker run out → non-striker faces next ball
+	        nextStriker = nonStriker;
+	        nextNonStriker = striker;
+	      } else {
+	        // non-striker run out → striker keeps strike, order unchanged
+	        nextStriker = striker;
+	        nextNonStriker = nonStriker;
+	      }
+	    } else {
+	      // bowled/caught/stumped → striker retains strike (negative scoring format)
+	      nextStriker = striker;
+	      nextNonStriker = nonStriker;
+	    }
 	  }
-
-	  // Apply over-end rules
+	
+	  // Apply to both dropdowns (prevents duplicates)
+	  strikerSelect.value = nextStriker;
+	  nonStrikerSelect.value = nextNonStriker;
+	
+	  // Over-end handling
 	  if (balls === 6) {
-		overs++;
-		balls = 0;
-		alert("Over complete. Select new bowler.");
-		bowlerSelect.value = "";
+	    overs++; balls = 0;
+	    alert("Over complete. Select new bowler.");
+	    bowlerSelect.value = "";
 	  }
-
-	  strikerSelect.value = newStriker;
-
+	
 	  log(`Now striker: ${strikerSelect.value}`);
-
+	
 	  history.push({ type: 'wicket', wicketType: type, outType, outPlayer, bowler, ...prev });
-
+	
 	  updateScore(); updateTables(); saveState();
 	}
 
