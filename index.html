@@ -558,7 +558,7 @@
        		switchStrike();
 		}
         log(`Start of over ${overs} ➝ New Bowler: ${bowlerSelect.value}, Batsman on Strike: ${strikerSelect.value}`);
-		if (lastBatsman) {clearLastBatsman();   // auto uncheck}
+		if (lastBatsman) {clearLastBatsman();}   // auto uncheck
         pendingOverSwapMode = null;
       }
       saveState();
