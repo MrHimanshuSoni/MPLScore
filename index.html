@@ -543,6 +543,7 @@
 	
 	  log("🔄 New match started. Please select batsmen and bowler.");
 	}
+	  
 	function clearLastBatsman() {
 	  lastBatsman = false;
 	  lastBatsmanCheckbox.checked = false;
@@ -554,10 +555,10 @@
     bowlerSelect.addEventListener('change', () => {
       if (balls === 0) {
 		if (overs > 0 && !lastBatsman) {
-			clearLastBatsman();   // auto uncheck
        		switchStrike();
 		}
         log(`Start of over ${overs} ➝ New Bowler: ${bowlerSelect.value}, Batsman on Strike: ${strikerSelect.value}`);
+		if (lastBatsman) {clearLastBatsman();   // auto uncheck}
         pendingOverSwapMode = null;
       }
       saveState();
